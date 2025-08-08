@@ -208,9 +208,9 @@ if __name__ == "__main__":
     labels_test = DataLoader.load_labels("./MNIST_FASHION/t10k-labels-idx1-ubyte")
 
 
-    small_images = images[:10000]
-    small_labels = labels[:10000]
+    small_images = images[:60000]
+    small_labels = labels[:60000]
 
-    model.train(small_images, small_labels, epochs=30)
+    model.train(small_images, small_labels, epochs=50)
 
     model.save_model("fashion_mnist_model.npz")

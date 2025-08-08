@@ -12,7 +12,7 @@ model.add_layer(size=10)
 
 model.load_model("fashion_mnist_model.npz")
 
-image = DataLoader.preprocess_image("./MNIST_FASHION/dress.jpeg")
+image = DataLoader.preprocess_image("./MNIST_FASHION/ankleboot.jpeg")
 
 model.predict(image, individual=True)
 
