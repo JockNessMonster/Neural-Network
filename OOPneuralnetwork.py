@@ -250,7 +250,7 @@ class NeuralNetwork:
 
     def show(self, filename="neural_network.png", scale=2):
         # Config
-        width, height = 800, 10000
+        width, height = 800, 800
         neuron_radius = 20 * scale
         layer_spacing = width * scale // (len(self.layers) + 1)
         vertical_padding = 50 * scale
@@ -382,29 +382,31 @@ if __name__ == "__main__":
 
     model = NeuralNetwork()
 
-    model.add_layer(size=784)
+    model.add_layer(size=4)
 
-    model.add_layer(size=300)
+    model.add_layer(size=3)
 
-    model.add_layer(size=300)
+    model.add_layer(size=3)
 
     model.add_layer(size=10)
 
-    labels = DataLoader.load_labels("./MNIST/train-labels.idx1-ubyte")
-    images = DataLoader.load_images("./MNIST/train-images.idx3-ubyte")
+    model.show()
+
+    # labels = DataLoader.load_labels("./MNIST/train-labels.idx1-ubyte")
+    # images = DataLoader.load_images("./MNIST/train-images.idx3-ubyte")
 
 
-    images_test = DataLoader.load_images("./MNIST/t10k-images.idx3-ubyte")
-    labels_test = DataLoader.load_labels("./MNIST/t10k-labels.idx1-ubyte")
+    # images_test = DataLoader.load_images("./MNIST/t10k-images.idx3-ubyte")
+    # labels_test = DataLoader.load_labels("./MNIST/t10k-labels.idx1-ubyte")
 
 
-    small_images = images[:30000]
-    small_labels = labels[:30000]
+    # small_images = images[:30000]
+    # small_labels = labels[:30000]
 
-    model.train(small_images, small_labels, epochs=20)
+    # model.train(small_images, small_labels, epochs=20)
 
-    # model.save("neuralmodel.txt")
+    # # model.save("neuralmodel.txt")
 
-    model.accuracy(images_test, labels_test)   
+    # model.accuracy(images_test, labels_test)   
 
 

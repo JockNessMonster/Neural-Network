@@ -122,7 +122,7 @@ class NeuralNetwork:
         values = self.forward_propagation(x_value)
         prediction = np.argmax(values)
         if individual:
-            print(items[prediction])
+            print(f"|{items[prediction].center(15)}|")
         return prediction
     
    
