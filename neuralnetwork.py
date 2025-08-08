@@ -211,6 +211,6 @@ if __name__ == "__main__":
     small_images = images[:60000]
     small_labels = labels[:60000]
 
-    model.train(small_images, small_labels, epochs=50)
+    model.train(small_images, small_labels, epochs=10)
 
     model.save_model("fashion_mnist_model.npz")
