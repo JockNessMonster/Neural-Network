@@ -14,6 +14,10 @@ model.add_layer(size=10)
 
 model.load_model("fashion_mnist_model.npz")
 
+if len(sys.argv) != 3:
+    print("Usage: python3 MNIST.py filename")
+    sys.exit()
+
 filename = sys.argv[1]
 
 images_test = DataLoader.load_images("./MNIST_FASHION/t10k-images-idx3-ubyte")
