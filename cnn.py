@@ -38,8 +38,6 @@ class Kernel:
 
     def __init__(self, size: tuple=(3, 3), stride=1):
         self.kernel = np.random.uniform(low=-3, high=3, size=size)
-
-        print(self.kernel)
         
         self.stride = stride
         
@@ -79,17 +77,32 @@ class ConvLayer:
         self.filter_size = filter_size
         self.stride = stride
 
+        # Change the initialised kernel values depending on the activation
         self.kernels = np.random.uniform(low=-3, high=3, size=(filters, *filter_size))
 
-    def print_kernels(self):
+        self.biases = np.zeros(shape=(filters, filter_size[2]))
+
+    def feedforward(self, image):
+        pass
+
+    def __str__(self):
+
+        '''
+        Visual Representation of the kernels in a 
+        '''
 
         kernel_representation = ""
 
         for kernel_index, kernel in enumerate(self.kernels):
+            kernel_representation += "-" * 40 + "\n\n"
             kernel_representation += f"Kernel {kernel_index + 1}\n\n"
+            kernel_filters = kernel.shape[2]
+            for filter in range(kernel_filters):
+                kernel_representation += f"Filter {filter + 1} in Kernel {kernel_index + 1}\n\n{kernel[:, :, filter]}\n\n"
+            
 
-    
-        print(kernel_representation)
+        
+        return kernel_representation
 
         
 
@@ -103,9 +116,11 @@ class ConvLayer:
 
 # img_array = np.array(image)
 
-layer_1 = ConvLayer(filters=2)
+layer_1 = ConvLayer(filters=1, filter_size=(3, 3, 2))
 
-layer_1.print_kernels()
+print(layer_1)
+
+
 
 
 # TesterFunctions.show_image_grid(img_array)
