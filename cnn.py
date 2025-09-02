@@ -2,7 +2,16 @@
 '''
 Allow custom activation | Depending on the activation it will determine which weight initialisation to do
 Allow custom kernel size, e.g. 5 x 5 x 1, allow the amount of kernels in each convolution to be edited
-Allow custom pooling, e.g. max pooling, min pooling, averrage pooling, as well as pooling size, and make the stride the value of the width of the pool kernel, but can be changed if specified.
+Allow custom pooling, e.g. max pooling, min pooling, average pooling, as well as pooling size, and make the stride the value of the width of the pool kernel, but can be changed if specified.
+
+'''
+
+'''
+To do:
+
+    - Add initialisation based on the activation
+    - 
+
 
 '''
 
@@ -22,7 +31,7 @@ class TesterFunctions:
 
         for i in range(array.shape[0]):
             for j in range(array.shape[1]):
-                plt.text(j, i, str(array[i, j]), fontsize=8, va="center", ha="center", color="red")
+                plt.text(j, i, str(array[i, j]), fontsize=6, va="center", ha="center", color="red")
 
         plt.show()
 
@@ -38,57 +47,26 @@ class TesterFunctions:
 class Activations:
 
     @staticmethod
-    def sigmoid(number: float):
-        return 1/(1 + math.exp(-number))
+    def sigmoid(x):
+        # Works on both single numbers and numpy arrays
+        return 1 / (1 + np.exp(-x))
     
     @staticmethod
-    def tanh(number: float):
-        return (math.exp(number) - math.exp(-number)) / (math.exp(number) + math.exp(-number))
+    def tanh(x):
+        # NumPy has a built-in tanh
+        return np.tanh(x)
     
     @staticmethod
-    def ReLU(number: float):
-        return max(0, number)
+    def relu(x):
+        # Element-wise max
+        return np.maximum(0, x)
     
     @staticmethod
-    def softmax(array):
-        sum = np.sum(np.exp(array))
-        return np.exp(array) / sum
+    def softmax(x, axis=None):
+        # Subtract max for numerical stability
+        e_x = np.exp(x - np.max(x, axis=axis, keepdims=True))
+        return e_x / np.sum(e_x, axis=axis, keepdims=True)
 
-
-class Kernel:
-
-    def __init__(self, size: tuple=(3, 3), stride=1):
-        self.kernel = np.random.uniform(low=-3, high=3, size=size)
-        
-        self.stride = stride
-        
-    def convolute(self, img):
-
-        # Gets the original images dimensions
-        img_height = img.shape[0]
-        img_width = img.shape[1]
-
-        # Gets the kernels dimesions
-        kernel_height = self.kernel.shape[0]
-        kernel_width = self.kernel.shape[1]
-
-        # Gets the output's dimensions
-        height_output = int(((img_height - kernel_height) / self.stride) + 1)
-        width_output = int(((img_width - kernel_width) / self.stride) + 1)
-
-        # Sets the output img array with zeroes
-        output_img = np.zeros((height_output, width_output))
-
-            
-        for height in range(height_output):
-            for width in range(width_output):
-                patch = img[height * self.stride : height * self.stride + kernel_height, width * self.stride : width * self.stride + kernel_width]
-
-                output_value = np.sum(patch * self.kernel)
-
-                output_img[height, width] = output_value
-
-        TesterFunctions.show_image_grid(output_img)
 
 class ConvLayer:
 
@@ -99,12 +77,24 @@ class ConvLayer:
         self.stride = stride
 
         # Change the initialised kernel values depending on the activation
-        self.kernels = np.random.uniform(low=-3, high=3, size=(filters, filter_size[2], filter_size[0], filter_size[1]))
+        # self.kernels = np.random.uniform(low=-3, high=3, size=(filters, filter_size[2], filter_size[0], filter_size[1]))
+
+        if activation.lower() == "relu":
+            std = np.sqrt(2.0 / np.prod(filter_size[:2]))
+            self.kernels = np.random.randn(filters, filter_size[2], filter_size[0], filter_size[1]) * std
+        elif activation.lower() == "tanh":
+            std = np.sqrt(1.0 / np.prod(filter_size[:2]))
+            self.kernels = np.random.randn(filters, filter_size[2], filter_size[0], filter_size[1]) * std
+        else:  # sigmoid or others
+            limit = np.sqrt(6 / np.prod(filter_size[:2]))
+            self.kernels = np.random.uniform(-limit, limit, size=(filters, filter_size[2], filter_size[0], filter_size[1]))
+
 
         self.biases = np.zeros(shape=(filters))
 
     @staticmethod
     def to_chw(image: np.ndarray) -> np.ndarray:
+
         if image.ndim == 2:
             return np.expand_dims(image, axis=(0, 1))
         
@@ -141,10 +131,9 @@ class ConvLayer:
         
         '''
 
-        image = ConvLayer.to_chw(image)
+        activations = {"sigmoid": Activations.sigmoid, "tanh": Activations.tanh, "relu": Activations.relu, "softmax": Activations.softmax}
 
-        print(f"Image Shape: {image.shape}")
-        print(f"Kernel Shape: {self.kernels.shape}\n\n\n")
+        image = ConvLayer.to_chw(image)
 
         if (self.kernels.shape[1] != image.shape[1]):
             raise ValueError(f"Layers in Image ({image.shape[1]}) has to equal amount of Filters in Kernel ({self.kernels.shape[1]})")
@@ -159,14 +148,28 @@ class ConvLayer:
         output_height = int(((img_height - kernel_height) / self.stride) + 1)
         output_width = int(((img_width - kernel_width) / self.stride) + 1)
 
-        outputs = np.zeros(shape=(self.kernels.shape[0], self.kernels.shape[1], output_height, output_width))
+        outputs = np.zeros(shape=(self.kernels.shape[0], output_height, output_width))
 
-        print(outputs)
+        # Goes over every kernel
+        for kernel in range(self.kernels.shape[0]):
+            # Goes over every filter
+            for filter in range(self.kernels.shape[1]):
+                for height in range(output_height):
+                    for width in range(output_width):
+                        patch = image[0, filter, height * self.stride : height * self.stride + kernel_height, width * self.stride : width * self.stride + kernel_width]
+                        
+                        outputs[kernel, height, width] += np.sum(patch * self.kernels[kernel, filter])
 
-        # for kernel_count_index, kernel_count in enumerate(outputs):
-        #     print(kernel_count)
+            outputs[kernel] = activations[self.activation.lower()](outputs[kernel] + self.biases[kernel])
 
-        return outputs
+                
+
+
+        
+                # To find image that goes with the filter 
+                # print(image[0, filter])
+
+        return np.expand_dims(outputs, axis=0)
 
 
     @staticmethod
@@ -180,9 +183,7 @@ class ConvLayer:
 
         for kernel_index, kernel in enumerate(output):
             kernel_representation += "-" * 40 + "\n"
-            kernel_representation += f"Kernel {kernel_index + 1}\n\n"
-            for filter_index, filter in enumerate(kernel):
-                kernel_representation += f"Filter {filter_index + 1} in Kernel {kernel_index + 1}\n\n{filter}\n\n"
+            kernel_representation += f"Kernel {kernel_index + 1}\n\n{kernel}"
             
         print(kernel_representation)
 
@@ -205,6 +206,57 @@ class ConvLayer:
                 kernel_representation += f"Filter {filter_index + 1} in Kernel {kernel_index + 1}\n\n{filter}\n\n"
             
         return kernel_representation
+    
+
+
+class PoolingLayer:
+    def __init__(self, size=(2, 2), stride=2, type="max"):
+
+        self.size = size
+
+        self.stride = stride if stride is not None else size[0]
+
+        self.type = type
+
+    def pool(self, image):
+
+        image = ConvLayer.to_chw(image)
+
+        batch_size, filters, image_height, image_width = image.shape
+
+        pool_height, pool_width = self.size
+
+        output_height = int(math.floor(((image_height - self.size[0]) / self.stride) + 1))
+
+        output_width = int(math.floor((((image_width - self.size[1]) / self.stride) + 1)))
+
+        outputs = np.zeros(shape=(batch_size, filters, output_height, output_width))
+
+        print(outputs.shape)
+
+        for b in range(batch_size):
+            for f in range(filters):
+                for h in range(output_height):
+                    for w in range(output_width):
+                        patch = image[b, f, h * self.stride : h * self.stride + pool_height, w * self.stride : w * self.stride + pool_width]
+
+                        if (self.type.lower() == "max"):
+                            outputs[b, f, h, w] = np.max(patch)
+                        elif (self.type.lower() == "average"):
+                            outputs[b, f, h, w] = np.mean(patch)
+                        elif (self.type.lower() == "min"):
+                            outputs[b, f, h, w] = np.min(patch)
+                        else:
+                            raise ValueError(f"Unknown pooling type: {self.type}")
+        
+        return outputs
+
+        
+
+
+
+    
+
 
         
 
@@ -218,14 +270,24 @@ image = image.resize((9, 9))
 
 img_array = np.array(image)
 
-layer_1 = ConvLayer(filters=1, filter_size=(3, 3, 3))
+img_array = img_array / 255.0
+
+layer_1 = ConvLayer(filters=3, filter_size=(3, 3, 3))
+
+layer_2 = PoolingLayer()
 
 output = layer_1.forward(img_array)
 
 
+pooled = layer_2.pool(output)
 
 
-# TesterFunctions.show_image_grid(img_array)
+
+
+
+
+
+
 
 
 
