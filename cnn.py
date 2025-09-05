@@ -9,7 +9,8 @@ Allow custom pooling, e.g. max pooling, min pooling, average pooling, as well as
 '''
 To do:
 
-    - Back Propagation
+    - Back Propagation for pooling layer
+    - Back Propagation for Convolutional Layer
 
 
 '''
@@ -443,6 +444,9 @@ class FlatteningLayer:
         if input.ndim > 1:
             return input.flatten()
         return input
+    
+    def backpropagate(self, input):
+        return input.reshape(self.input_shape)
     
 '''
 -----------------------------------------------------------------------------------------------------------------------------------------------------
